@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Base Q&A</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    .container { width: 100%; max-width: 720px; }
+
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    #session-info {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #new-convo-btn {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: transparent;
+      color: #6366f1;
+      border: 1px solid #c7d2fe;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+    }
+    #new-convo-btn:hover { background: #eef2ff; }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #d4d4d4;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus { border-color: #6366f1; }
+
+    button {
+      padding: 10px 20px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    button:hover { background: #4f46e5; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    /* Sources panel */
+    #sources-panel {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+    }
+    #sources-panel h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #3b82f6;
+      margin-bottom: 10px;
+    }
+    .source-card {
+      background: #fff;
+      border: 1px solid #dbeafe;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+    .source-card:last-child { margin-bottom: 0; }
+    .source-id {
+      font-family: "Menlo", "Courier New", monospace;
+      font-size: 0.8rem;
+      color: #1d4ed8;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .source-score {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .source-content { color: #374151; line-height: 1.5; }
+
+    /* Answer panel */
+    #answer-panel {
+      display: none;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      line-height: 1.7;
+      font-size: 1rem;
+      min-height: 60px;
+    }
+
+    /* Threshold warning */
+    #threshold-banner {
+      display: none;
+      padding: 10px 14px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #c2410c;
+      margin-bottom: 12px;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #d4d4d4;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Cursor blink while streaming */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #6366f1;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.8s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #status { font-size: 0.8rem; color: #6b7280; margin-bottom: 12px; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <h1>Knowledge Base Q&A</h1>
+      <div id="session-info">
+        <span id="turn-counter"></span>
+        <button id="new-convo-btn" onclick="newConversation()">New Conversation</button>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <input id="query" type="text" placeholder="Ask a question…" autocomplete="off" />
+      <button id="ask-btn" onclick="ask()">Ask</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="threshold-banner">No relevant content found in the knowledge base.</div>
+    <div id="sources-panel"><h2>Grounding Sources</h2><div id="sources-list"></div></div>
+    <div id="answer-panel" aria-live="polite"></div>
+  </div>
+
+  <script>
+    const queryInput   = document.getElementById('query');
+    const askBtn       = document.getElementById('ask-btn');
+    const statusEl     = document.getElementById('status');
+    const thresholdEl  = document.getElementById('threshold-banner');
+    const sourcesEl    = document.getElementById('sources-panel');
+    const sourcesList  = document.getElementById('sources-list');
+    const answerEl     = document.getElementById('answer-panel');
+    const newConvoBtn  = document.getElementById('new-convo-btn');
+    const turnCounter  = document.getElementById('turn-counter');
+
+    let sessionId = null;
+    let turnCount = 0;
+
+    queryInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+
+    function reset() {
+      thresholdEl.style.display = 'none';
+      sourcesEl.style.display   = 'none';
+      answerEl.style.display    = 'none';
+      sourcesList.innerHTML     = '';
+      answerEl.innerHTML        = '';
+      statusEl.innerHTML        = '';
+    }
+
+    function updateSessionUI() {
+      if (sessionId) {
+        newConvoBtn.style.display = 'inline-block';
+        turnCounter.textContent   = `Turn ${turnCount}`;
+      } else {
+        newConvoBtn.style.display = 'none';
+        turnCounter.textContent   = '';
+      }
+    }
+
+    function newConversation() {
+      sessionId  = null;
+      turnCount  = 0;
+      updateSessionUI();
+      reset();
+      queryInput.focus();
+    }
+
+    function renderSources(sources) {
+      if (!sources.length) return;
+      sourcesEl.style.display = 'block';
+      sources.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'source-card';
+        card.innerHTML = `
+          <div class="source-id">${escHtml(s.source)}</div>
+          <div class="source-score">BM25 score: ${s.score} &nbsp;|&nbsp; ${escHtml(s.heading)}</div>
+          <div class="source-content">${escHtml(s.content)}</div>
+        `;
+        sourcesList.appendChild(card);
+      });
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function ask() {
+      const q = queryInput.value.trim();
+      if (!q) return;
+
+      reset();
+      askBtn.disabled = true;
+      statusEl.innerHTML = 'Retrieving… <span class="spinner"></span>';
+
+      try {
+        const res = await fetch('/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, session_id: sessionId }),
+        });
+
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        // SSE parser: accumulate lines, fire on blank-line boundary
+        function parseEvents(chunk) {
+          buf += chunk;
+          const events = [];
+          let boundary;
+          while ((boundary = buf.indexOf('\n\n')) !== -1) {
+            const block = buf.slice(0, boundary);
+            buf = buf.slice(boundary + 2);
+            let event = '', data = '';
+            for (const line of block.split('\n')) {
+              if (line.startsWith('event: ')) event = line.slice(7);
+              else if (line.startsWith('data: '))  data  = line.slice(6);
+            }
+            if (event) events.push({ event, data });
+          }
+          return events;
+        }
+
+        let answerStarted = false;
+        let cursorEl = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          for (const { event, data } of parseEvents(decoder.decode(value, { stream: true }))) {
+            if (event === 'session_id') {
+              sessionId = data;
+              updateSessionUI();
+
+            } else if (event === 'sources') {
+              const sources = JSON.parse(data);
+              statusEl.innerHTML = sources.length
+                ? `Found ${sources.length} source${sources.length > 1 ? 's' : ''}`
+                : '';
+              renderSources(sources);
+
+            } else if (event === 'threshold_applied') {
+              if (data === 'true') {
+                thresholdEl.style.display = 'block';
+                statusEl.innerHTML = '';
+              }
+
+            } else if (event === 'token') {
+              if (!answerStarted) {
+                answerEl.style.display = 'block';
+                answerEl.textContent   = '';
+                cursorEl = document.createElement('span');
+                cursorEl.className = 'cursor';
+                answerEl.appendChild(cursorEl);
+                answerStarted = true;
+                statusEl.innerHTML = '';
+              }
+              // Insert token before cursor
+              answerEl.insertBefore(document.createTextNode(data), cursorEl);
+
+            } else if (event === 'done') {
+              if (cursorEl) cursorEl.remove();
+              turnCount++;
+              updateSessionUI();
+              statusEl.innerHTML = '';
+            } else if (event === 'error') {
+              statusEl.textContent = data;
+            }
+          }
+        }
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
