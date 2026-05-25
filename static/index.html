@@ -18,19 +18,46 @@
       padding: 48px 16px;
     }
 
-    .container { width: 100%; max-width: 720px; }
-
-    .header-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 28px;
-    }
+    .container { width: 100%; max-width: 900px; }
 
     h1 {
       font-size: 1.5rem;
       font-weight: 600;
       letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    /* Strategy tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: #e5e7eb;
+      border-radius: 10px;
+      padding: 4px;
+      width: fit-content;
+    }
+    .tab-btn {
+      padding: 7px 18px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      background: transparent;
+      color: #6b7280;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #1a1a1a; }
+    .tab-btn.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .tab-btn.active.compare { background: #7c3aed; color: #fff; }
+
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
     }
 
     #session-info {
@@ -57,7 +84,7 @@
     .input-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     input[type="text"] {
@@ -86,9 +113,11 @@
     }
     button:hover { background: #4f46e5; }
     button:disabled { background: #a5b4fc; cursor: not-allowed; }
+    #ask-btn.compare-mode { background: #7c3aed; }
+    #ask-btn.compare-mode:hover { background: #6d28d9; }
 
-    /* Sources panel */
-    #sources-panel {
+    /* Single-mode panels */
+    .sources-panel {
       display: none;
       margin-bottom: 16px;
       padding: 14px 16px;
@@ -96,7 +125,7 @@
       border: 1px solid #bfdbfe;
       border-radius: 8px;
     }
-    #sources-panel h2 {
+    .sources-panel h2 {
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -120,15 +149,10 @@
       font-weight: 600;
       margin-bottom: 4px;
     }
-    .source-score {
-      font-size: 0.75rem;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
+    .source-score { font-size: 0.75rem; color: #6b7280; margin-bottom: 4px; }
     .source-content { color: #374151; line-height: 1.5; }
 
-    /* Answer panel */
-    #answer-panel {
+    .answer-panel {
       display: none;
       padding: 20px;
       background: #fff;
@@ -139,8 +163,7 @@
       min-height: 60px;
     }
 
-    /* Threshold warning */
-    #threshold-banner {
+    .threshold-banner {
       display: none;
       padding: 10px 14px;
       background: #fff7ed;
@@ -149,6 +172,52 @@
       font-size: 0.875rem;
       color: #c2410c;
       margin-bottom: 12px;
+    }
+
+    /* Compare grid */
+    .compare-grid {
+      display: none;
+      gap: 16px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .compare-grid.visible { display: grid; }
+    @media (max-width: 640px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+
+    .compare-col { display: flex; flex-direction: column; gap: 12px; }
+
+    .compare-col-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    .compare-col-header.bm25 { background: #eff6ff; color: #1d4ed8; }
+    .compare-col-header.vector { background: #f5f3ff; color: #6d28d9; }
+
+    .compare-sources { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; font-size: 0.875rem; }
+    .compare-sources .src-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 8px; }
+
+    .compare-answer {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 16px;
+      line-height: 1.7;
+      font-size: 0.9375rem;
+      min-height: 80px;
+    }
+
+    .compare-threshold {
+      padding: 8px 12px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #c2410c;
     }
 
     /* Spinner */
@@ -163,9 +232,9 @@
       vertical-align: middle;
       margin-left: 6px;
     }
+    .spinner.purple { border-top-color: #7c3aed; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Cursor blink while streaming */
     .cursor {
       display: inline-block;
       width: 2px;
@@ -182,8 +251,17 @@
 </head>
 <body>
   <div class="container">
+    <h1>Knowledge Base Q&A</h1>
+
+    <!-- Strategy tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-bm25" onclick="setMode('bm25')">BM25 Keyword</button>
+      <button class="tab-btn" id="tab-vector" onclick="setMode('vector')">Vector RAG</button>
+      <button class="tab-btn compare" id="tab-compare" onclick="setMode('compare')">A/B Compare</button>
+    </div>
+
     <div class="header-row">
-      <h1>Knowledge Base Q&A</h1>
+      <div id="mode-hint" style="font-size:0.8rem;color:#9ca3af;"></div>
       <div id="session-info">
         <span id="turn-counter"></span>
         <button id="new-convo-btn" onclick="newConversation()">New Conversation</button>
@@ -196,38 +274,86 @@
     </div>
 
     <div id="status"></div>
-    <div id="threshold-banner">No relevant content found in the knowledge base.</div>
-    <div id="sources-panel"><h2>Grounding Sources</h2><div id="sources-list"></div></div>
-    <div id="answer-panel" aria-live="polite"></div>
+
+    <!-- Single-mode panels (BM25 streaming / Vector) -->
+    <div class="threshold-banner" id="threshold-banner">No relevant content found in the knowledge base.</div>
+    <div class="sources-panel" id="sources-panel"><h2>Grounding Sources</h2><div id="sources-list"></div></div>
+    <div class="answer-panel" id="answer-panel" aria-live="polite"></div>
+
+    <!-- Compare mode panels -->
+    <div class="compare-grid" id="compare-grid">
+      <div class="compare-col">
+        <div class="compare-col-header bm25">BM25 — Keyword Search</div>
+        <div id="bm25-threshold" class="compare-threshold" style="display:none">No relevant content found.</div>
+        <div class="compare-sources" id="bm25-sources" style="display:none">
+          <div class="src-title">Sources</div>
+          <div id="bm25-sources-list"></div>
+        </div>
+        <div class="compare-answer" id="bm25-answer" style="display:none"></div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-col-header vector">Vector RAG — Semantic Search</div>
+        <div id="vector-threshold" class="compare-threshold" style="display:none">No relevant content found.</div>
+        <div class="compare-sources" id="vector-sources" style="display:none">
+          <div class="src-title">Sources</div>
+          <div id="vector-sources-list"></div>
+        </div>
+        <div class="compare-answer" id="vector-answer" style="display:none"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const queryInput   = document.getElementById('query');
-    const askBtn       = document.getElementById('ask-btn');
-    const statusEl     = document.getElementById('status');
-    const thresholdEl  = document.getElementById('threshold-banner');
-    const sourcesEl    = document.getElementById('sources-panel');
-    const sourcesList  = document.getElementById('sources-list');
-    const answerEl     = document.getElementById('answer-panel');
-    const newConvoBtn  = document.getElementById('new-convo-btn');
-    const turnCounter  = document.getElementById('turn-counter');
+    const queryInput  = document.getElementById('query');
+    const askBtn      = document.getElementById('ask-btn');
+    const statusEl    = document.getElementById('status');
+    const modeHint    = document.getElementById('mode-hint');
+    const newConvoBtn = document.getElementById('new-convo-btn');
+    const turnCounter = document.getElementById('turn-counter');
 
-    let sessionId = null;
-    let turnCount = 0;
+    // Single-mode elements
+    const thresholdEl = document.getElementById('threshold-banner');
+    const sourcesEl   = document.getElementById('sources-panel');
+    const sourcesList = document.getElementById('sources-list');
+    const answerEl    = document.getElementById('answer-panel');
+
+    // Compare-mode elements
+    const compareGrid       = document.getElementById('compare-grid');
+    const bm25ThresholdEl   = document.getElementById('bm25-threshold');
+    const bm25SourcesEl     = document.getElementById('bm25-sources');
+    const bm25SourcesList   = document.getElementById('bm25-sources-list');
+    const bm25AnswerEl      = document.getElementById('bm25-answer');
+    const vectorThresholdEl = document.getElementById('vector-threshold');
+    const vectorSourcesEl   = document.getElementById('vector-sources');
+    const vectorSourcesList = document.getElementById('vector-sources-list');
+    const vectorAnswerEl    = document.getElementById('vector-answer');
+
+    let currentMode = 'bm25';
+    let sessionId   = null;
+    let turnCount   = 0;
+
+    const MODE_HINTS = {
+      bm25:    'BM25 keyword matching · streaming · conversation memory',
+      vector:  'Semantic embedding search · OpenAI text-embedding-3-small',
+      compare: 'Runs both strategies on the same query — L2 threshold 0.8 for Vector',
+    };
 
     queryInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 
-    function reset() {
-      thresholdEl.style.display = 'none';
-      sourcesEl.style.display   = 'none';
-      answerEl.style.display    = 'none';
-      sourcesList.innerHTML     = '';
-      answerEl.innerHTML        = '';
-      statusEl.innerHTML        = '';
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`tab-${mode}`).classList.add('active');
+      modeHint.textContent = MODE_HINTS[mode];
+      askBtn.className = mode === 'compare' ? 'compare-mode' : '';
+      resetPanels();
+      if (mode !== 'bm25') {
+        sessionId = null; turnCount = 0; updateSessionUI();
+      }
     }
 
     function updateSessionUI() {
-      if (sessionId) {
+      if (sessionId && currentMode === 'bm25') {
         newConvoBtn.style.display = 'inline-block';
         turnCounter.textContent   = `Turn ${turnCount}`;
       } else {
@@ -237,54 +363,76 @@
     }
 
     function newConversation() {
-      sessionId  = null;
-      turnCount  = 0;
+      sessionId = null; turnCount = 0;
       updateSessionUI();
-      reset();
+      resetPanels();
       queryInput.focus();
     }
 
-    function renderSources(sources) {
-      if (!sources.length) return;
-      sourcesEl.style.display = 'block';
-      sources.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'source-card';
-        card.innerHTML = `
-          <div class="source-id">${escHtml(s.source)}</div>
-          <div class="source-score">BM25 score: ${s.score} &nbsp;|&nbsp; ${escHtml(s.heading)}</div>
-          <div class="source-content">${escHtml(s.content)}</div>
-        `;
-        sourcesList.appendChild(card);
-      });
+    function resetPanels() {
+      thresholdEl.style.display = 'none';
+      sourcesEl.style.display   = 'none';
+      answerEl.style.display    = 'none';
+      sourcesList.innerHTML     = '';
+      answerEl.innerHTML        = '';
+      statusEl.innerHTML        = '';
+      compareGrid.classList.remove('visible');
+      [bm25ThresholdEl, bm25SourcesEl, bm25AnswerEl,
+       vectorThresholdEl, vectorSourcesEl, vectorAnswerEl].forEach(el => el.style.display = 'none');
+      bm25SourcesList.innerHTML   = '';
+      vectorSourcesList.innerHTML = '';
     }
 
     function escHtml(str) {
       return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    async function ask() {
+    function renderSources(containerEl, listEl, sources, strategy) {
+      if (!sources.length) return;
+      containerEl.style.display = 'block';
+      const scoreLabel = strategy === 'vector' ? 'L2 dist' : 'BM25';
+      sources.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'source-card';
+        card.innerHTML = `
+          <div class="source-id">${escHtml(s.source)}</div>
+          <div class="source-score">${scoreLabel}: ${s.score} &nbsp;|&nbsp; ${escHtml(s.heading)}</div>
+          <div class="source-content">${escHtml(s.content)}</div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function ask() {
       const q = queryInput.value.trim();
       if (!q) return;
-
-      reset();
+      resetPanels();
       askBtn.disabled = true;
-      statusEl.innerHTML = 'Retrieving… <span class="spinner"></span>';
 
+      if (currentMode === 'compare') {
+        askCompare(q);
+      } else if (currentMode === 'vector') {
+        askVector(q);
+      } else {
+        askBm25Stream(q);
+      }
+    }
+
+    // ── BM25 streaming ──────────────────────────────────────────────────────
+    async function askBm25Stream(q) {
+      statusEl.innerHTML = 'Retrieving… <span class="spinner"></span>';
       try {
         const res = await fetch('/chat/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: q, session_id: sessionId }),
         });
-
         if (!res.ok) throw new Error(`Server error ${res.status}`);
 
         const reader  = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = '';
 
-        // SSE parser: accumulate lines, fire on blank-line boundary
         function parseEvents(chunk) {
           buf += chunk;
           const events = [];
@@ -295,38 +443,32 @@
             let event = '', data = '';
             for (const line of block.split('\n')) {
               if (line.startsWith('event: ')) event = line.slice(7);
-              else if (line.startsWith('data: '))  data  = line.slice(6);
+              else if (line.startsWith('data: ')) data = line.slice(6);
             }
             if (event) events.push({ event, data });
           }
           return events;
         }
 
-        let answerStarted = false;
-        let cursorEl = null;
+        let answerStarted = false, cursorEl = null;
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           for (const { event, data } of parseEvents(decoder.decode(value, { stream: true }))) {
             if (event === 'session_id') {
-              sessionId = data;
-              updateSessionUI();
-
+              sessionId = data; updateSessionUI();
             } else if (event === 'sources') {
               const sources = JSON.parse(data);
               statusEl.innerHTML = sources.length
                 ? `Found ${sources.length} source${sources.length > 1 ? 's' : ''}`
                 : '';
-              renderSources(sources);
-
+              renderSources(sourcesEl, sourcesList, sources, 'bm25');
             } else if (event === 'threshold_applied') {
               if (data === 'true') {
                 thresholdEl.style.display = 'block';
                 statusEl.innerHTML = '';
               }
-
             } else if (event === 'token') {
               if (!answerStarted) {
                 answerEl.style.display = 'block';
@@ -337,13 +479,10 @@
                 answerStarted = true;
                 statusEl.innerHTML = '';
               }
-              // Insert token before cursor
               answerEl.insertBefore(document.createTextNode(data), cursorEl);
-
             } else if (event === 'done') {
               if (cursorEl) cursorEl.remove();
-              turnCount++;
-              updateSessionUI();
+              turnCount++; updateSessionUI();
               statusEl.innerHTML = '';
             } else if (event === 'error') {
               statusEl.textContent = data;
@@ -356,6 +495,76 @@
         askBtn.disabled = false;
       }
     }
+
+    // ── Vector (non-streaming) ───────────────────────────────────────────────
+    async function askVector(q) {
+      statusEl.innerHTML = 'Retrieving… <span class="spinner purple"></span>';
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q, strategy: 'vector' }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+
+        if (data.threshold_applied) {
+          thresholdEl.style.display = 'block';
+        } else {
+          renderSources(sourcesEl, sourcesList, data.sources, 'vector');
+          answerEl.style.display = 'block';
+          answerEl.textContent   = data.answer;
+        }
+        statusEl.innerHTML = '';
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+
+    // ── Compare (both strategies, side-by-side) ──────────────────────────────
+    async function askCompare(q) {
+      statusEl.innerHTML = 'Running both strategies… <span class="spinner purple"></span>';
+      compareGrid.classList.add('visible');
+      try {
+        const res = await fetch('/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q }),
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+
+        // BM25 column
+        if (data.bm25.threshold_applied) {
+          bm25ThresholdEl.style.display = 'block';
+        } else {
+          renderSources(bm25SourcesEl, bm25SourcesList, data.bm25.sources, 'bm25');
+          bm25AnswerEl.style.display = 'block';
+          bm25AnswerEl.textContent   = data.bm25.answer;
+        }
+
+        // Vector column
+        if (data.vector.threshold_applied) {
+          vectorThresholdEl.style.display = 'block';
+        } else {
+          renderSources(vectorSourcesEl, vectorSourcesList, data.vector.sources, 'vector');
+          vectorAnswerEl.style.display = 'block';
+          vectorAnswerEl.textContent   = data.vector.answer;
+        }
+
+        statusEl.innerHTML = '';
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        compareGrid.classList.remove('visible');
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+
+    // init
+    setMode('bm25');
   </script>
 </body>
 </html>
